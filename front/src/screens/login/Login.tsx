@@ -1,41 +1,30 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
-import useAuthStore from '../store'; 
+import { useNavigation } from '@react-navigation/native';
+import InputField from '../../components/login/InputField'; // Import the reusable input component
+import useAuthStore from '../../store'; // Import the store
+import { loginUser } from '../../services/api'; // Import the login service
 
 const Login = () => {
   const navigation = useNavigation<any>();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { setUser, token } = useAuthStore(); 
+  const { setUser } = useAuthStore(); // Destructure the store
+
   const handleLogin = async () => {
-    try {
-      const response = await axios.post('http://10.0.2.2:5000/api/login', {
-        email,
-        password,
-      });
-  
-      const { token, user } = response.data;
-  
-      await AsyncStorage.setItem('token', token); 
-      setUser(user, token); 
-  
-  
-      navigation.navigate('Home'); 
+    try {      
+      const { token, user } = await loginUser(email, password);
+      console.log(token, user);
+     
+      await AsyncStorage.setItem('token', token);
+      setUser(user, token);
+      navigation.navigate('Home');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      setError(err.message);
     }
   };
-  
 
   const handleSignup = () => {
     navigation.navigate('Signup');
@@ -46,21 +35,16 @@ const Login = () => {
       <Text style={styles.title}>Welcome back</Text>
       <Text style={styles.subtitle}>Log in to your account</Text>
 
-      <TextInput
-        style={styles.input}
+      <InputField
         placeholder="Email address"
-        placeholderTextColor="#888"
         value={email}
         onChangeText={setEmail}
       />
-
-      <TextInput
-        style={styles.input}
+      <InputField
         placeholder="Password"
-        placeholderTextColor="#888"
-        secureTextEntry
         value={password}
         onChangeText={setPassword}
+        secureTextEntry
       />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -109,14 +93,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#666',
     marginBottom: 32,
-  },
-  input: {
-    backgroundColor: '#f2f2f2',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    fontSize: 16,
-    color: '#000',
   },
   button: {
     backgroundColor: '#007BFF',

@@ -1,33 +1,24 @@
+// Signup.tsx
 import React, { useState } from 'react';
-import {
-  View,
-  TextInput,
-  Text,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-  ActivityIndicator,
-} from 'react-native';
-import axios from 'axios';
-import useAuthStore from '../store';
+import { View, TextInput, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { signupUser } from '../../services/api';
+import useAuthStore from '../../store';
+import SocialIcons from '../../components/signup/SocialIcons';
 import { useNavigation } from '@react-navigation/native';
 
 const Signup = () => {
   const { setUser } = useAuthStore();
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
-  const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
   const navigation = useNavigation<any>();
 
   const handleSignup = async () => {
     setLoading(true);
     try {
-      const response = await axios.post('http://10.0.2.2:5000/api/register', {
-        email,
-        password,
-      });
-      const { token } = response.data;
+      const response = await signupUser(email, password);
+      const { token } = response;
       setUser(email, token);
       setLoading(false);
     } catch (err: any) {
@@ -35,13 +26,17 @@ const Signup = () => {
       setLoading(false);
     }
   };
-  const handlelogin = () => {
+
+  const handleLogin = () => {
     navigation.navigate('Login');
   };
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Create</Text>
       <Text style={styles.subHeader}>your account</Text>
+
+      {error && <Text style={styles.errorText}>{error}</Text>}
 
       <TextInput
         placeholder="Email address"
@@ -50,7 +45,6 @@ const Signup = () => {
         onChangeText={setEmail}
         style={styles.input}
       />
-
       <TextInput
         placeholder="Password"
         placeholderTextColor="#aaa"
@@ -59,7 +53,6 @@ const Signup = () => {
         onChangeText={setPassword}
         style={styles.input}
       />
-
 
       {loading ? (
         <ActivityIndicator size="large" color="#007BFF" style={{ marginBottom: 20 }} />
@@ -71,35 +64,16 @@ const Signup = () => {
 
       <Text style={styles.orText}>or sign up with</Text>
 
-      <View style={styles.socialIcons}>
-        <TouchableOpacity>
-          <Image
-            source={{ uri: 'https://cdn-icons-png.flaticon.com/512/733/733609.png' }}
-            style={styles.icon}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Image
-            source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2991/2991148.png' }}
-            style={styles.icon}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Image
-            source={{ uri: 'https://cdn-icons-png.flaticon.com/512/733/733547.png' }}
-            style={styles.icon}
-          />
-        </TouchableOpacity>
-      </View>
+      <SocialIcons />
 
       <View style={styles.loginContainer}>
         <Text style={styles.loginText}>Already have an account? </Text>
-      <TouchableOpacity onPress={handlelogin}>
+        <TouchableOpacity onPress={handleLogin}>
           <Text style={styles.loginLink}>Log In</Text>
         </TouchableOpacity>
       </View>
     </View>
-  ); 
+  );
 };
 
 const styles = StyleSheet.create({
@@ -146,16 +120,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#aaa',
     marginBottom: 20,
-  },
-  socialIcons: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 30,
-  },
-  icon: {
-    width: 40,
-    height: 40,
-    marginHorizontal: 10,
   },
   loginContainer: {
     flexDirection: 'row',

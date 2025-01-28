@@ -1,21 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, ActivityIndicator, Button, Alert } from 'react-native';
-import axios from 'axios';
-import useAuthStore from '../store';
+import { View, Text, StyleSheet, Image, ScrollView, ActivityIndicator, Button } from 'react-native';
+import { getBlog, deleteBlog } from '../../services/api';
+import useAuthStore from '../../store';
+import { BASE_URL } from '../../services/api';
 
 const BlogDetails = ({ route, navigation }: any) => {
   const { id } = route.params;
   const [blog, setBlog] = useState<any>(null);
   const { token } = useAuthStore(); 
 
-
-  const BASE_URL = 'http://10.0.2.2:5000'; 
-
   useEffect(() => {
     const fetchBlog = async () => {
       try {
-        const response = await axios.get(`${BASE_URL}/api/blogs/${id}`);
-        setBlog(response.data);
+        const data = await getBlog(id);
+        setBlog(data);
       } catch (err) {
         console.error('Error fetching blog details:', err);
       }
@@ -24,23 +22,19 @@ const BlogDetails = ({ route, navigation }: any) => {
   }, [id]);
 
   const handleDeleteBlog = async (blogId: string) => {
-
-    
+    if (!token) {
+      alert('You must be logged in to delete a blog');
+      return;
+    }
     try {
-      const response = await axios.delete(`http://10.0.2.2:5000/api/blogs/${blogId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,  
-        },
-      });
+      await deleteBlog(blogId, token);
+      alert('Blog deleted successfully');
+      navigation.goBack();
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error('Error deleting blog:', error.response?.data || error.message);
-      } else {
-        console.error('Error deleting blog:', error);
-      }
+      console.error('Error deleting blog:', error);
+      alert('Error deleting blog');
     }
   };
-  
 
   const handleUpdate = () => {
     navigation.navigate('update', { id });
@@ -83,7 +77,6 @@ const BlogDetails = ({ route, navigation }: any) => {
             </View>
           )}
 
-        
           <View style={styles.buttonsContainer}>
             <Button title="Update" onPress={handleUpdate} />
             <Button title="Delete" onPress={() => handleDeleteBlog(id)} color="red" />
